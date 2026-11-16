@@ -1,0 +1,4 @@
+# fnOS web-client signing constants: api_key and api_secret, separated by
+# whitespace (one line or two lines). Copy this file to ".apicred" and fill
+# in the values — see "Proxy configuration" in the top-level README.
+<api_key> <api_secret>

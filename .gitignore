@@ -1,0 +1,5 @@
+.apicred
+*.wgt
+logs/
+__pycache__/
+*.muse-github-snapshot-sync.json

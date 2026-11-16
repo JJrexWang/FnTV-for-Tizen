@@ -1,0 +1,20 @@
+services:
+  fntv-proxy:
+    build: .
+    container_name: fntv-proxy
+    # host networking: the proxy talks to fnOS on 127.0.0.1:5666 and the TV
+    # reaches it on this host's LAN address, port 18090.
+    network_mode: host
+    environment:
+      - UPSTREAM=http://127.0.0.1:5666
+      - PORT=18090
+      - LOG_DIR=/logs
+      # Option A: pass the fnOS web-client signing constants as env vars.
+      # - FNTV_API_KEY=
+      # - FNTV_API_SECRET=
+    volumes:
+      - ./logs:/logs
+      # Option B: or mount a .apicred file (api_key and api_secret,
+      # whitespace separated) — see .apicred.example.
+      # - ./.apicred:/app/.apicred:ro
+    restart: unless-stopped
