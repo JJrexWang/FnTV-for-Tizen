@@ -31,7 +31,7 @@
   <!-- HOME -->
   <div id="scr-home" class="screen">
     <div class="topbar">
-      <img class="topbar-icon" src="icon.png" alt=""><div class="logo-sm">FnTV v1.4.0</div>
+      <img class="topbar-icon" src="icon.png" alt=""><div class="logo-sm">FnTV v1.5.0</div>
       <div id="home-server" class="topbar-sub"></div>
       <div id="home-sync" class="topbar-sub">上次同步：未同步</div>
       <button id="btn-home-search" class="topbtn foc">🔍 搜索</button>
@@ -55,6 +55,11 @@
     <div class="topbar">
       <div id="browse-title" class="logo-sm"></div>
       <span id="browse-count" class="topbar-sub"></span>
+      <button id="btn-browse-filter" class="foc topbtn">筛选</button>
+    </div>
+    <div id="browse-filters">
+      <div class="flt-head"><span class="flt-title">筛选</span><button id="btn-browse-reset" class="foc">重置</button><span class="flt-hint">点选条件即时生效；再按顶栏「筛选」收起</span></div>
+      <div id="browse-filter-rows"></div>
     </div>
     <div id="browse-scroll"><div id="browse-grid" class="grid-wrap"></div></div>
   </div>
@@ -94,7 +99,7 @@
         <div class="set-row"><button id="btn-set-wipe" class="foc setbtn">清除保存的账号密码</button></div>
         <div class="set-row"><button id="btn-set-back" class="foc setbtn">← 返回</button></div>
       </div>
-      <div class="set-info dim">FnTV v1.4.0 · 偏好保存在电视本机</div>
+      <div class="set-info dim">FnTV v1.5.0 · 偏好保存在电视本机</div>
     </div>
   </div>
 

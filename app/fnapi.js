@@ -81,10 +81,12 @@ function apiLogin(user, pass) {
 function apiMediaDbList() { return fnRequest('GET', '/v/api/v1/mediadb/list'); }
 
 /* Browse a library or folder (all content types). Resolves {total, list}. */
-function apiBrowse(ancestorGuid, page, pageSize) {
+function apiBrowse(ancestorGuid, page, pageSize, extraTags) {
+  var tags = { type: ['Movie', 'TV', 'Directory', 'Video'] };
+  if (extraTags) { for (var k in extraTags) tags[k] = extraTags[k]; }
   return fnRequest('POST', '/v/api/v1/item/list', {
     ancestor_guid: ancestorGuid,
-    tags: { type: ['Movie', 'TV', 'Directory', 'Video'] },
+    tags: tags,
     exclude_grouped_video: 1,
     sort_type: 'DESC', sort_column: 'create_time',
     page_size: pageSize || 60, page: page || 1
@@ -123,6 +125,14 @@ function apiStreamList(mediaGuid) { return fnRequest('GET', '/v/api/v1/stream/li
    string in the data-MD5 slot. Signing the percent-encoded form passes
    for ASCII keywords but fails with code=5000 (invalid sign) for
    Chinese keywords and spaces. */
+/* Filter options present in one library (genre ids, resolutions,
+   color ranges, audio types, countries, decades, match states).
+   Values are passed back verbatim as item/list tags. */
+function apiTagList(ancestorGuid) {
+  var data = 'ancestor_guid=' + ancestorGuid + '&is_favorite=0';
+  return fnRequest('GET', '/v/api/v1/tag/list?' + data, data, '/v/api/v1/tag/list');
+}
+
 function apiSearch(q) {
   var query = 'q=' + encodeURIComponent(q);
   return fnRequest('GET', '/v/api/v1/search/list?' + query, 'q=' + q, '/v/api/v1/search/list');

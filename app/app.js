@@ -469,7 +469,7 @@ function dumpImgRaw(it, where) {
 function loadLibPage(row) {
   if (row.loading || (row.total && row.items.length >= row.total)) return;
   row.loading = true;
-  apiBrowse(row.lib.guid, row.page + 1, 60).then(function (d) {
+  apiBrowse(row.lib.guid, row.page + 1, 60, row.kind === 'browse' ? browseTags() : null).then(function (d) {
     row.loading = false;
     row.page += 1;
     row.total = (d && d.total) || 0;
@@ -1617,11 +1617,131 @@ function openBrowse(lib) {
   showScreen('browse');
   $('browse-title').textContent = lib.title;
   $('browse-grid').innerHTML = '';
+  BF = bfDefaults();
+  BF_OPTS = null;
+  closeFilters();
   browseRow = {
     kind: 'browse', lib: lib, items: [], total: 0, page: 0, loading: false,
     cardsEl: $('browse-grid'), countEl: $('browse-count')
   };
   loadLibPage(browseRow);
+  apiTagList(lib.guid).then(function (d) {
+    BF_OPTS = d || {};
+    buildFilterPanel();
+  }).catch(function (e) {
+    BF_OPTS = {};
+    buildFilterPanel();
+    appLog('筛选选项加载失败: ' + e.message);
+  });
+}
+/* ---------------- browse filters (mirrors the web client's panel) ----
+   Options come from GET /tag/list for the open library; the chosen
+   values go back verbatim as extra tags on POST /item/list. Genre
+   values are TMDB ids, localized locally. One value per dimension. */
+var BF = null;
+var BF_OPTS = null;
+var GENRE_ZH = { 1: '动作', 2: '冒险', 3: '动画', 4: '喜剧', 5: '犯罪', 6: '纪录', 7: '剧情', 8: '家庭', 9: '科幻奇幻', 10: '历史', 11: '恐怖', 12: '音乐', 13: '悬疑', 14: '爱情', 16: '电视电影', 17: '惊悚', 18: '战争政治', 19: '西部', 30: '动作冒险', 31: '儿童', 32: '新闻', 33: '真人秀', 35: '肥皂剧', 36: '脱口秀', 101: '体育', 102: '财经', 103: '教育', 104: '生活', 105: '本地', 106: '其他', 109: '电视剧', 110: '综艺', 111: '儿童' };
+var LOCATE_ZH = { US: '美国', CN: '中国大陆', HK: '中国香港', TW: '中国台湾', JP: '日本', KR: '韩国', GB: '英国', FR: '法国', DE: '德国', AT: '奥地利', MX: '墨西哥', CA: '加拿大', AU: '澳大利亚', IN: '印度', IT: '意大利', ES: '西班牙', RU: '俄罗斯' };
+function bfDefaults() {
+  return { type: '', genres: -1, resolution: '', color_range: '', audio_type: '', locate: '', decade: '', recognition_status: '', watched: '' };
+}
+var BF_DIMS = [
+  { key: 'type', label: '影视分类', fixed: [['', '全部'], ['Movie', '电影'], ['TV', '电视节目']] },
+  { key: 'genres', label: '类型', src: 'genres' },
+  { key: 'resolution', label: '分辨率', src: 'resolutions' },
+  { key: 'color_range', label: '动态范围', src: 'color_range' },
+  { key: 'audio_type', label: '音频规格', src: 'audio_type' },
+  { key: 'locate', label: '国家/地区', src: 'locate' },
+  { key: 'decade', label: '发行年份', src: 'decades' },
+  { key: 'recognition_status', label: '匹配状态', src: 'recognition_status' },
+  { key: 'watched', label: '是否已观看', fixed: [['', '全部'], ['1', '已观看'], ['0', '未观看']] }
+];
+function bfLabel(dim, v) {
+  if (dim === 'genres') return GENRE_ZH[v] || ('类型 ' + v);
+  if (dim === 'decade') {
+    if (v === 'Recent') return '今年';
+    var m = /^(\d{4})s$/.exec(String(v));
+    return m ? m[1] + '年代' : String(v);
+  }
+  if (dim === 'recognition_status') return ({ '0': '未匹配', '1': '已匹配', '2': '读取 NFO' })[String(v)] || ('状态 ' + v);
+  if (dim === 'locate') return LOCATE_ZH[v] || String(v);
+  if (dim === 'audio_type') return ({ atmos: '杜比全景声', stereo: '立体声', other: '其他' })[String(v).toLowerCase()] || String(v);
+  return String(v);
+}
+function browseTags() {
+  if (!BF) return null;
+  var t = {};
+  if (BF.type) t.type = [BF.type];
+  if (BF.genres !== -1 && BF.genres !== '' && BF.genres != null) t.genres = BF.genres;
+  ['resolution', 'color_range', 'audio_type', 'locate', 'decade', 'recognition_status', 'watched'].forEach(function (k) {
+    if (BF[k] !== '' && BF[k] != null) t[k] = BF[k];
+  });
+  return Object.keys(t).length ? t : null;
+}
+function buildFilterPanel() {
+  var host = $('browse-filter-rows');
+  if (!host) return;
+  host.innerHTML = '';
+  BF_DIMS.forEach(function (dim) {
+    var opts = null;
+    if (dim.fixed) opts = dim.fixed;
+    else if (BF_OPTS && BF_OPTS[dim.src] && BF_OPTS[dim.src].length) {
+      opts = [[dim.key === 'genres' ? -1 : '', '全部']];
+      BF_OPTS[dim.src].forEach(function (v) { opts.push([v, bfLabel(dim.key, v)]); });
+    }
+    if (!opts) return;
+    var rowEl = el('div', 'flt-row');
+    rowEl.appendChild(el('span', 'flt-label', dim.label));
+    var chips = el('div', 'flt-chips');
+    opts.forEach(function (pair) {
+      var b = el('button', 'foc chip flt-chip', pair[1]);
+      if (String(BF[dim.key]) === String(pair[0])) b.classList.add('sel');
+      b.__onenter = (function (d, v, btn) {
+        return function () { setFilter(d, v, btn); };
+      })(dim.key, pair[0], b);
+      chips.appendChild(b);
+    });
+    rowEl.appendChild(chips);
+    host.appendChild(rowEl);
+  });
+  sizeBrowseScroll();
+}
+function setFilter(dim, v, btn) {
+  BF[dim] = v;
+  var chips = btn.parentNode;
+  var bs = chips.querySelectorAll('.flt-chip');
+  for (var i = 0; i < bs.length; i++) bs[i].classList.remove('sel');
+  btn.classList.add('sel');
+  reloadBrowse();
+}
+function reloadBrowse() {
+  if (!browseRow) return;
+  browseRow.items = [];
+  browseRow.page = 0;
+  browseRow.total = 0;
+  browseRow.cardsEl.innerHTML = '';
+  loadLibPage(browseRow);
+}
+function sizeBrowseScroll() {
+  var sc = $('browse-scroll');
+  if (!sc) return;
+  if ($('scr-browse').classList.contains('filters-open')) {
+    var panel = $('browse-filters');
+    sc.style.height = Math.max(280, 988 - (panel ? panel.offsetHeight : 0) - 6) + 'px';
+  } else {
+    sc.style.height = '988px';
+  }
+}
+function openFilters() {
+  $('scr-browse').classList.add('filters-open');
+  $('browse-filters').style.display = 'block';
+  sizeBrowseScroll();
+}
+function closeFilters() {
+  $('scr-browse').classList.remove('filters-open');
+  var p = $('browse-filters');
+  if (p) p.style.display = 'none';
+  sizeBrowseScroll();
 }
 function doSearch() {
   var q = $('in-q').value.trim();
@@ -1817,6 +1937,15 @@ window.addEventListener('load', function () {
   $('btn-log-clear').__onenter = function () { logLines = []; renderLogPage(); toast('日志已清空'); };
   $('btn-log-back').__onenter = function () { showScreen(logReturn || 'home'); };
   $('btn-dosearch').__onenter = doSearch;
+  $('btn-browse-filter').__onenter = function () {
+    if ($('scr-browse').classList.contains('filters-open')) closeFilters();
+    else openFilters();
+  };
+  $('btn-browse-reset').__onenter = function () {
+    BF = bfDefaults();
+    buildFilterPanel();
+    reloadBrowse();
+  };
 
   var foc = document.querySelectorAll('#scr-login input, #scr-login button');
   for (var i = 0; i < foc.length; i++) foc[i].classList.add('foc');
