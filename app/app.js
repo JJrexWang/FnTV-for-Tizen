@@ -59,6 +59,7 @@ function exitApp() {
 /* ---------------- focus engine ---------------- */
 var curFocus = null;
 var editing = false;
+var editKeyHandled = false; // keydown path already finished this edit; blur handler must not advance twice
 function isFocusable(e) {
   if (!e || !e.classList || !e.classList.contains('foc')) return false;
   var r = e.getBoundingClientRect();
@@ -291,17 +292,29 @@ document.addEventListener('keydown', function (ev) {
     if (aeIsInput && ae.id === 'in-q' && (code === 13 || code === 10252 || code === 415 || code === 40)) {
       // Search field: Confirm/Down finishes typing and lands on the
       // search button (the IME swallows plain arrows otherwise).
-      ae.blur();
+      editKeyHandled = true;
       editing = false;
+      ae.blur();
       setFocus($('btn-dosearch'));
       ev.preventDefault();
       return;
     }
-    if (aeIsInput && (code === 13 || code === 10009 || code === 461)) {
-      // Confirm/Back while the TV keyboard is up: finish editing, swallow
-      // the key so it doesn't also trigger a button or a screen-back.
-      ae.blur();
+    if (aeIsInput && (code === 13 || code === 10252 || code === 415)) {
+      // Confirm finishes a form field and advances to the next item
+      // (login chain: server -> account -> password -> proxy -> login).
+      editKeyHandled = true;
       editing = false;
+      ae.blur();
+      advanceFromInput(ae);
+      ev.preventDefault();
+      return;
+    }
+    if (aeIsInput && (code === 10009 || code === 461)) {
+      // Back while the TV keyboard is up: finish editing, stay on the
+      // field, and swallow the key so it doesn't also go back a screen.
+      editKeyHandled = true;
+      editing = false;
+      ae.blur();
       ev.preventDefault();
       return;
     }
@@ -324,6 +337,14 @@ document.addEventListener('keydown', function (ev) {
     ev.preventDefault();
   }
 });
+/* After a field is finished, where focus goes: the search field lands
+   on the search button; login fields walk the form chain in order. */
+var LOGIN_CHAIN = ['in-server', 'in-user', 'in-pass', 'in-proxy', 'btn-login'];
+function advanceFromInput(e) {
+  if (e.id === 'in-q') { setFocus($('btn-dosearch')); return; }
+  var i = LOGIN_CHAIN.indexOf(e.id);
+  if (i >= 0 && i < LOGIN_CHAIN.length - 1) setFocus($(LOGIN_CHAIN[i + 1]));
+}
 function activate(e) {
   if (e.tagName === 'INPUT') {
     if (!editing && document.activeElement === e) {
@@ -331,16 +352,25 @@ function activate(e) {
       // "done with this field" — move on instead of re-entering edit.
       if (e.id === 'in-q') { doSearch(); return; }
       e.blur();
-      queueMove('down');
+      advanceFromInput(e);
       return;
     }
     editing = true;
+    editKeyHandled = false;
     e.focus();
+    toast(e.id === 'in-q' ? '输完按【确认】或【↓】跳到「搜索」按钮' : '输完按【确认】到下一项，按【返回】结束输入', 4000);
     var done = function () {
-      editing = false;
       e.removeEventListener('blur', done);
       e.removeEventListener('focusout', done);
+      var byKey = editKeyHandled;
+      editKeyHandled = false;
+      editing = false;
       if (curFocus === e) e.classList.add('focused');
+      if (!byKey) {
+        // The TV keyboard closed on its own (its Done key): treat it
+        // like Confirm — advance instead of leaving focus in limbo.
+        advanceFromInput(e);
+      }
     };
     e.addEventListener('blur', done);
     e.addEventListener('focusout', done);
