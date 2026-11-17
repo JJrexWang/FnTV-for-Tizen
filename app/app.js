@@ -641,8 +641,10 @@ function onFocused(e) {
 /* ---------------- detail ---------------- */
 var detailStack = [];
 var detailCurrent = null;
+var detailReturn = 'home'; // screen that opened the detail page (home/search/browse)
 var D = null; // {item, info, infoItem, seasons, seasonIdx, episodes, children}
 function openDetail(item) {
+  if (curScreen !== 'detail') detailReturn = curScreen || 'home';
   if (curScreen === 'detail' && detailCurrent) detailStack.push(detailCurrent);
   detailCurrent = item;
   loadDetail(item);
@@ -654,7 +656,7 @@ function closeDetail() {
     loadDetail(detailCurrent);
   } else {
     detailCurrent = null;
-    showScreen('home');
+    showScreen(detailReturn || 'home');
   }
 }
 function loadDetail(item) {
