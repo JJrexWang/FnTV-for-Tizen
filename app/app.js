@@ -1640,6 +1640,77 @@ function doSearch() {
     appLog('搜索失败: ' + e.message);
   });
 }
+/* ---------------- search on-screen letter keyboard ----------------
+   The fnOS server matches pinyin initials (verified on the user's own
+   library: "lldq" finds the title), so a remote-driven letter board can
+   drive the regular search API without the TV system keyboard. The
+   system keyboard stays available as the other mode (Chinese text,
+   1-2 character titles the server cannot match by initials). */
+var KB_ROWS = ['1234567890', 'QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'];
+function buildKeyboard() {
+  var kb = $('kb');
+  if (!kb || kb.childNodes.length) return;
+  KB_ROWS.forEach(function (rowStr) {
+    var row = document.createElement('div');
+    row.className = 'kb-row';
+    for (var i = 0; i < rowStr.length; i++) {
+      (function (ch) {
+        var b = document.createElement('button');
+        b.className = 'foc kb-key';
+        b.id = 'kb-' + ch;
+        b.textContent = ch;
+        b.__onenter = function () { kbType(ch); };
+        row.appendChild(b);
+      })(rowStr.charAt(i));
+    }
+    kb.appendChild(row);
+  });
+  var last = document.createElement('div');
+  last.className = 'kb-row';
+  [['kb-del', '⌫ 退格', function () { kbBackspace(); }],
+   ['kb-space', '空格', function () { kbType(' '); }],
+   ['kb-clear', '清空', function () { setQuery(''); }],
+   ['kb-go', '搜索', function () { doSearch(); }]].forEach(function (spec) {
+    var b = document.createElement('button');
+    b.className = 'foc kb-key kb-wide';
+    b.id = spec[0];
+    b.textContent = spec[1];
+    b.__onenter = spec[2];
+    last.appendChild(b);
+  });
+  kb.appendChild(last);
+}
+function setQuery(v) { $('in-q').value = v; syncQDisplay(); }
+function kbType(ch) { setQuery(($('in-q').value || '') + ch); }
+function kbBackspace() {
+  var v = $('in-q').value || '';
+  if (v) setQuery(v.slice(0, -1));
+}
+function syncQDisplay() {
+  var v = $('in-q').value || '';
+  $('q-text').textContent = v;
+  $('q-ph').style.display = v ? 'none' : 'inline';
+}
+function searchKbOn() { return PREFS.searchKb !== false; }
+function applySearchMode() {
+  var kbOn = searchKbOn();
+  $('kb').style.display = kbOn ? 'block' : 'none';
+  $('q-display').style.display = kbOn ? 'inline-block' : 'none';
+  $('in-q').style.display = kbOn ? 'none' : '';
+  $('btn-kbmode').textContent = kbOn ? '中文输入' : '字母键盘';
+  $('search-hint').textContent = kbOn
+    ? '方向键选字母、按确认输入（可输首字母，如 LLDQ）；输完按「搜索」'
+    : '输入完按【确认】或【↓】，跳到「搜索」按钮，再按【确认】开始搜索';
+  $('search-scroll').style.height = kbOn ? '380px' : '816px';
+  syncQDisplay();
+}
+function openSearch() {
+  showScreen('search');
+  applySearchMode();
+  if (searchKbOn()) { var a = $('kb-A'); if (a) setFocus(a); }
+  else setFocus($('in-q'));
+}
+
 function refreshSettings() {
   $('set-account').textContent = (FN.user || '') + ' @ ' + (FN.base || '');
   $('set-proxy').textContent = '播放/图片代理：' + (FN.proxy || '未设置');
@@ -1713,10 +1784,17 @@ window.addEventListener('load', function () {
     });
   } catch (e) { /* not on TV */ }
 
-  prefsLoad(); applyFocusScale(); applyLogHints();
+  prefsLoad(); applyFocusScale(); applyLogHints(); buildKeyboard(); applySearchMode();
   wirePlayerButtons();
   wireSettings();
-  $('btn-home-search').__onenter = function () { showScreen('search'); setFocus($('in-q')); };
+  $('btn-home-search').__onenter = function () { openSearch(); };
+  $('btn-kbmode').__onenter = function () {
+    PREFS.searchKb = !searchKbOn();
+    prefsSave();
+    applySearchMode();
+    if (searchKbOn()) { var ka = $('kb-A'); if (ka) setFocus(ka); }
+    else setFocus($('in-q'));
+  };
   $('btn-home-settings').__onenter = openSettings;
   $('btn-home-log').__onenter = function () { openLogPage('home'); };
   $('btn-set-log').__onenter = function () { openLogPage('settings'); };

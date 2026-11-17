@@ -129,7 +129,7 @@ function apiSearch(q) {
 }
 
 /* ---------------- playback preferences (TV-local) ---------------- */
-var PREFS = { ratio: 'fit', autoNext: true, resume: true, seekStep: 30, osdSec: 5, focusScale: 1.16, logEnabled: true, logHints: true, tzOffset: null };
+var PREFS = { ratio: 'fit', autoNext: true, resume: true, seekStep: 30, osdSec: 5, focusScale: 1.16, logEnabled: true, logHints: true, tzOffset: null, searchKb: true };
 function prefsLoad() {
   try {
     var raw = localStorage.getItem('fntv_prefs');

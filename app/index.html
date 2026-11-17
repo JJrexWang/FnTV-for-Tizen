@@ -31,7 +31,7 @@
   <!-- HOME -->
   <div id="scr-home" class="screen">
     <div class="topbar">
-      <img class="topbar-icon" src="icon.png" alt=""><div class="logo-sm">FnTV v1.3.4</div>
+      <img class="topbar-icon" src="icon.png" alt=""><div class="logo-sm">FnTV v1.4.0</div>
       <div id="home-server" class="topbar-sub"></div>
       <div id="home-sync" class="topbar-sub">上次同步：未同步</div>
       <button id="btn-home-search" class="topbtn foc">🔍 搜索</button>
@@ -63,11 +63,14 @@
   <div id="scr-search" class="screen">
     <div class="topbar"><div class="logo-sm">搜索</div></div>
     <div class="search-bar">
+      <div id="q-display" class="q-display"><span id="q-text"></span><span id="q-ph" class="q-ph">输入片名首字母，如 LLDQ</span></div>
       <input id="in-q" class="foc" type="text" value=""/>
       <button id="btn-dosearch" class="foc primary">搜索</button>
+      <button id="btn-kbmode" class="foc">中文输入</button>
       <span id="search-status" class="status-line"></span>
     </div>
-    <div class="search-hint">输入完按【确认】或【↓】，跳到「搜索」按钮，再按【确认】开始搜索</div>
+    <div class="search-hint" id="search-hint">输入完按【确认】或【↓】，跳到「搜索」按钮，再按【确认】开始搜索</div>
+    <div id="kb"></div>
     <div id="search-scroll"><div id="search-results" class="grid-wrap"></div></div>
   </div>
 
@@ -91,7 +94,7 @@
         <div class="set-row"><button id="btn-set-wipe" class="foc setbtn">清除保存的账号密码</button></div>
         <div class="set-row"><button id="btn-set-back" class="foc setbtn">← 返回</button></div>
       </div>
-      <div class="set-info dim">FnTV v1.3.4 · 偏好保存在电视本机</div>
+      <div class="set-info dim">FnTV v1.4.0 · 偏好保存在电视本机</div>
     </div>
   </div>
 
