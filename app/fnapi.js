@@ -118,11 +118,14 @@ function apiRecordPlay(st) { return fnRequest('POST', '/v/api/v1/play/record', s
 function apiSetWatched(itemGuid) { return fnRequest('POST', '/v/api/v1/item/watched', { item_guid: itemGuid }); }
 function apiStreamList(mediaGuid) { return fnRequest('GET', '/v/api/v1/stream/list/' + mediaGuid); }
 
-/* Search. Signing rule for GET-with-query (per the reference client):
-   sign the bare path, with the raw query string in the data-MD5 slot. */
+/* Search. Signing rule for GET-with-query (per the official web client,
+   verified live 2026-11-17): sign the bare path, with the DECODED query
+   string in the data-MD5 slot. Signing the percent-encoded form passes
+   for ASCII keywords but fails with code=5000 (invalid sign) for
+   Chinese keywords and spaces. */
 function apiSearch(q) {
   var query = 'q=' + encodeURIComponent(q);
-  return fnRequest('GET', '/v/api/v1/search/list?' + query, query, '/v/api/v1/search/list');
+  return fnRequest('GET', '/v/api/v1/search/list?' + query, 'q=' + q, '/v/api/v1/search/list');
 }
 
 /* ---------------- playback preferences (TV-local) ---------------- */
