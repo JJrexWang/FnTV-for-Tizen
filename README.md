@@ -16,7 +16,7 @@ needed.
 > it with **your own** fnOS server and **your own** media library.
 
 Tested on a Samsung QA85Q70TAJ (85" Q70T, Tizen 5.5). Current version:
-**1.3.2**.
+**1.6.0**.
 
 ## Features
 
@@ -34,6 +34,8 @@ Tested on a Samsung QA85Q70TAJ (85" Q70T, Tizen 5.5). Current version:
   proxy) are rendered by the app itself as an overlay. (AVPlay cannot
   render embedded ASS tracks; see *Limitations*.)
 - **Search** — Full-library search with a TV-friendly focus flow.
+- **Bilingual UI** — English and Simplified Chinese, switchable in
+  Settings (the app restarts to apply).
 - **Settings** — Display mode, auto-play next, resume, seek step, control
   bar auto-hide, focus zoom level, clock time zone override, log
   management.

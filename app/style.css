@@ -156,6 +156,7 @@ button.primary { background: #f5f5f7; color: #101014; border-color: #f5f5f7; fon
 #btn-set-osd::before { content: '👁'; }
 #btn-set-scale::before { content: '🔍'; }
 #btn-set-tz::before { content: '🕐'; }
+#btn-set-lang::before { content: '🌐'; }
 #btn-set-log::before { content: '📋'; }
 #btn-set-logout::before { content: '🚪'; }
 #btn-set-wipe::before { content: '🧹'; }

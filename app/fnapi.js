@@ -139,7 +139,7 @@ function apiSearch(q) {
 }
 
 /* ---------------- playback preferences (TV-local) ---------------- */
-var PREFS = { ratio: 'fit', autoNext: true, resume: true, seekStep: 30, osdSec: 5, focusScale: 1.16, logEnabled: true, logHints: true, tzOffset: null, searchKb: true };
+var PREFS = { ratio: 'fit', autoNext: true, resume: true, seekStep: 30, osdSec: 5, focusScale: 1.16, logEnabled: true, logHints: true, tzOffset: null, searchKb: true , lang: 'zh' };
 function prefsLoad() {
   try {
     var raw = localStorage.getItem('fntv_prefs');
@@ -152,6 +152,127 @@ function prefsLoad() {
 }
 function prefsSave() {
   try { localStorage.setItem('fntv_prefs', JSON.stringify(PREFS)); } catch (e) { /* ignore */ }
+}
+
+/* ---------------- i18n (zh / en) ----------------
+   UI language lives in PREFS.lang ('zh' default). t() reads the active
+   dictionary; static markup carries data-i18n keys applied by
+   applyI18n() in app.js. Switching language restarts the app so every
+   screen re-renders in the new language. */
+var I18N = {
+  zh: {
+    appSubtitle: '飞牛影视 · 电视客户端', server: '服务器', account: '飞牛账号', password: '密码',
+    proxy: '播放代理', login: '登录', clearSaved: '清除保存', logs: '日志',
+    loginHint: '操作：选中输入框按【确认】打开键盘输入；输完再按【确认】自动到下一项；【返回】结束输入',
+    inputNextHint: '输完按【确认】到下一项，按【返回】结束输入',
+    search: '搜索', settings: '设置', loading: '正在加载…', filter: '筛选', reset: '重置',
+    filterHint: '点选条件即时生效；再按顶栏「筛选」收起',
+    kbPlaceholder: '输入片名首字母，如 LLDQ', kbChinese: '中文输入', kbLetters: '字母键盘',
+    searchHintKb: '方向键选字母、按确认输入（可输首字母，如 LLDQ）；输完按「搜索」',
+    searchHintText: '输入完按【确认】或【↓】，跳到「搜索」按钮，再按【确认】开始搜索',
+    accountLabel: '账号：', logMgmt: '日志管理', logout: '退出登录（回登录页）',
+    wipe: '清除保存的账号密码', back: '← 返回', prefsLocal: '偏好保存在电视本机',
+    exportNas: '导出到 NAS', importNas: '从 NAS 导入', clearLog: '清空日志',
+    prevEp: '⏮ 上一集', nextEp: '下一集 ⏭', episodes: '选集', subtitlesBtn: '字幕', audioBtn: '音轨',
+    playerHint: '←/→ 快退/快进 · ↑ 大步快进 · ↓ 播控按钮 · 确认暂停/播放 · 返回退出',
+    on: '开', off: '关', yes: '是', no: '否',
+    continueWatching: '继续观看', viewAll: '查看全部 →', connected: '已连接 ',
+    loadingLibs: '正在加载媒体库…', noLibs: '没有媒体库',
+    libsFail: '媒体库加载失败: ', continueFail: '继续观看加载失败: ',
+    loginBusy: '登录中…', autoLoginBusy: '自动登录中…', loginOk: '登录成功',
+    loginFail: '登录失败: ', loginNeed: '服务器/账号/密码都要填',
+    loggedOut: '已退出登录', wiped: '已清除本机保存的账号密码',
+    searchFirst: '先输入关键词', searching: '搜索中…', searchFail: '搜索失败: ',
+    setProxy: '播放/图片代理：', notSet: '未设置', setRatio: '默认画面模式：',
+    setAutoNext: '完播自动连播下一集：', setResume: '断点续播：',
+    setSeek: '快进/快退步长：', seconds: ' 秒', setOsd: '播控界面自动隐藏：',
+    setScale: '焦点放大比例：', setTz: '时钟时区：', tzAuto: '自动（跟随电视）',
+    setLang: '语言：', langSwitched: '语言已切换，正在重启…',
+    lastSync: '上次同步：', notSynced: '未同步',
+    logRec: '日志记录：', logHintT: '日志提示：', noLogs: '（暂无日志）',
+    importNeed: '未登录或未设代理，无法导入', importing: '正在从 NAS 导入…',
+    logCleared: '日志已清空',
+    play: '▶ 播放', resumePlay: '▶ 继续播放', markWatched: '标为已看',
+    markedWatched: '已标为已看', opFail: '操作失败: ', epsFail: '加载剧集失败: ',
+    seasonWord: '季', watchedBadge: '已看', typeVideo: '视频', typeFolder: '文件夹',
+    loading2: '加载中…', loadingSub: '加载字幕…', paused: '❚❚ 已暂停', pauseBtn: '❚❚ 暂停',
+    playBtn: '▶ 播放', aspectPrefix: '画面：', playingNow: '（播放中）',
+    dimType: '影视分类', dimGenres: '类型', dimResolution: '分辨率', dimColor: '动态范围',
+    dimAudio: '音频规格', dimLocate: '国家/地区', dimDecade: '发行年份',
+    dimRecognition: '匹配状态', dimWatched: '是否已观看',
+    all: '全部', movie: '电影', tv: '电视节目', watchedYes: '已观看', watchedNo: '未观看',
+    thisYear: '今年', rec0: '未匹配', rec1: '已匹配', rec2: '读取 NFO',
+    atmos: '杜比全景声', stereo: '立体声', other: '其他',
+    buffering: '缓冲中…', playError: '播放出错', resumeFromA: '从 ', resumeFromB: ' 继续播放',
+    introSkipped: '已跳过片头', subOff: '字幕已关闭', importFail: '导入失败: ',
+    logSynced: '日志已同步到 NAS', logSyncTimeout: '日志同步失败(超时)', logSyncNet: '日志同步失败(网络)', logSyncFailA: '日志同步失败(',
+    untitled: '(无标题)', toastNext: '下一集', noEpInfo: '（无选集信息）',
+    switchedTo: '已切换', switchFail: '切换失败: ',
+    genreFallback: '类型 ', statusFallback: '状态 '
+  },
+  en: {
+    appSubtitle: 'fnOS Media · TV Client', server: 'Server', account: 'fnOS account', password: 'Password',
+    proxy: 'Playback proxy', login: 'Sign in', clearSaved: 'Clear saved', logs: 'Logs',
+    loginHint: 'Tip: focus a field and press OK to type; press OK again to move to the next field; Back ends input',
+    inputNextHint: 'Press OK to move to the next field, Back to end input',
+    search: 'Search', settings: 'Settings', loading: 'Loading…', filter: 'Filter', reset: 'Reset',
+    filterHint: 'Filters apply instantly; press Filter again to close',
+    kbPlaceholder: 'Type title initials, e.g. LLDQ', kbChinese: 'Chinese input', kbLetters: 'Letter keyboard',
+    searchHintKb: 'Pick letters with the D-pad and OK (initials work, e.g. LLDQ); then press Search',
+    searchHintText: 'After typing, press OK or ↓ to jump to the Search button, then OK to search',
+    accountLabel: 'Account: ', logMgmt: 'Log management', logout: 'Sign out (to login screen)',
+    wipe: 'Clear saved credentials', back: '← Back', prefsLocal: 'Preferences are stored on this TV',
+    exportNas: 'Export to NAS', importNas: 'Import from NAS', clearLog: 'Clear logs',
+    prevEp: '⏮ Prev', nextEp: 'Next ⏭', episodes: 'Episodes', subtitlesBtn: 'Subtitles', audioBtn: 'Audio',
+    playerHint: '←/→ Seek · ↑ Big step · ↓ Controls · OK Play/Pause · Back Exit',
+    on: 'On', off: 'Off', yes: 'Yes', no: 'No',
+    continueWatching: 'Continue Watching', viewAll: 'View all →', connected: 'Connected ',
+    loadingLibs: 'Loading libraries…', noLibs: 'No libraries',
+    libsFail: 'Failed to load libraries: ', continueFail: 'Failed to load Continue Watching: ',
+    loginBusy: 'Signing in…', autoLoginBusy: 'Auto sign-in…', loginOk: 'Signed in',
+    loginFail: 'Sign-in failed: ', loginNeed: 'Server, account and password are all required',
+    loggedOut: 'Signed out', wiped: 'Saved credentials cleared',
+    searchFirst: 'Enter a keyword first', searching: 'Searching…', searchFail: 'Search failed: ',
+    setProxy: 'Playback/image proxy: ', notSet: 'Not set', setRatio: 'Default aspect: ',
+    setAutoNext: 'Auto-play next episode: ', setResume: 'Resume playback: ',
+    setSeek: 'Seek step: ', seconds: 's', setOsd: 'Controls auto-hide: ',
+    setScale: 'Focus zoom: ', setTz: 'Clock timezone: ', tzAuto: 'Auto (follow TV)',
+    setLang: 'Language: ', langSwitched: 'Language switched, restarting…',
+    lastSync: 'Last sync: ', notSynced: 'Not synced',
+    logRec: 'Log recording: ', logHintT: 'Log hints: ', noLogs: '(no logs yet)',
+    importNeed: 'Not signed in or no proxy set', importing: 'Importing from NAS…',
+    logCleared: 'Logs cleared',
+    play: '▶ Play', resumePlay: '▶ Resume', markWatched: 'Mark as watched',
+    markedWatched: 'Marked as watched', opFail: 'Failed: ', epsFail: 'Failed to load episodes: ',
+    seasonWord: 'Season', watchedBadge: 'Watched', typeVideo: 'Video', typeFolder: 'Folder',
+    loading2: 'Loading…', loadingSub: 'Loading subtitles…', paused: '❚❚ Paused', pauseBtn: '❚❚ Pause',
+    playBtn: '▶ Play', aspectPrefix: 'Aspect: ', playingNow: ' (playing)',
+    dimType: 'Category', dimGenres: 'Genre', dimResolution: 'Resolution', dimColor: 'Dynamic range',
+    dimAudio: 'Audio', dimLocate: 'Country/Region', dimDecade: 'Release year',
+    dimRecognition: 'Match status', dimWatched: 'Watched',
+    all: 'All', movie: 'Movie', tv: 'TV Show', watchedYes: 'Watched', watchedNo: 'Unwatched',
+    thisYear: 'This year', rec0: 'Not matched', rec1: 'Matched', rec2: 'NFO',
+    atmos: 'Dolby Atmos', stereo: 'Stereo', other: 'Other',
+    buffering: 'Buffering…', playError: 'Playback error', resumeFromA: 'Resuming from ', resumeFromB: '',
+    introSkipped: 'Intro skipped', subOff: 'Subtitles off', importFail: 'Import failed: ',
+    logSynced: 'Logs synced to NAS', logSyncTimeout: 'Log sync failed (timeout)', logSyncNet: 'Log sync failed (network)', logSyncFailA: 'Log sync failed (',
+    untitled: '(Untitled)', toastNext: 'Next episode', noEpInfo: '(No episode info)',
+    switchedTo: 'Switched to ', switchFail: 'Switch failed: ',
+    genreFallback: 'Genre ', statusFallback: 'Status '
+  }
+};
+function langIsEn() { return PREFS.lang === 'en'; }
+function t(k) {
+  var d = I18N[langIsEn() ? 'en' : 'zh'];
+  return d[k] || I18N.zh[k] || k;
+}
+function fmtTotal(n) { return langIsEn() ? String(n) : '共 ' + n; }
+function fmtFound(n) { return langIsEn() ? ('Found ' + n) : ('找到 ' + n + ' 条'); }
+function fmtLogCount(n) { return langIsEn() ? (n + ' log lines') : ('当前日志共 ' + n + ' 行'); }
+function epLabel(n) { return langIsEn() ? ('E' + n) : ('第' + n + '集'); }
+function seasonLabel(n, title) {
+  if (title) return title;
+  return langIsEn() ? ('Season ' + n) : ('第' + n + '季');
 }
 
 /* ---------------- URL builders ---------------- */

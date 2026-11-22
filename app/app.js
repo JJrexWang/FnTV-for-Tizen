@@ -15,7 +15,7 @@ function fmtTime(sec) {
   function p(n) { return (n < 10 ? '0' : '') + n; }
   return h > 0 ? h + ':' + p(m) + ':' + p(s) : m + ':' + p(s);
 }
-function itemTitle(it) { return it.title || it.tv_title || it.name || '(无标题)'; }
+function itemTitle(it) { return it.title || it.tv_title || it.name || t('untitled'); }
 function isPlayable(it) { return it.type === 'Movie' || it.type === 'Video' || it.type === 'Episode'; }
 function isFolderish(it) { return it.type === 'Directory' || it.type === 'TV' || it.type === 'Folder' || it.type === 'Season'; }
 
@@ -185,6 +185,19 @@ function toggleLog() {
   ov.style.display = show ? 'block' : 'none';
   if (show) { ov.textContent = logLines.join('\n'); uploadLog(true); }
 }
+/* ---------------- i18n (static markup) ---------------- */
+function applyI18n() {
+  var nodes = document.querySelectorAll('[data-i18n]');
+  for (var i = 0; i < nodes.length; i++) {
+    var k = nodes[i].getAttribute('data-i18n');
+    if (k) nodes[i].textContent = t(k);
+  }
+  var syncs = document.querySelectorAll('.sync-initial');
+  for (var j = 0; j < syncs.length; j++) syncs[j].textContent = t('lastSync') + t('notSynced');
+  var ver = document.querySelectorAll('.ver-line');
+  for (var m = 0; m < ver.length; m++) ver[m].textContent = ver[m].getAttribute('data-ver') + ' · ' + t('prefsLocal');
+}
+
 /* ---------------- log page ---------------- */
 var logReturn = 'home';
 function openLogPage(from) {
@@ -195,24 +208,24 @@ function openLogPage(from) {
 }
 function renderLogPage() {
   var tg = $('btn-log-toggle');
-  if (tg) tg.textContent = '日志记录：' + (PREFS.logEnabled === false ? '关' : '开');
+  if (tg) tg.textContent = t('logRec') + (PREFS.logEnabled === false ? t('off') : t('on'));
   var hb = $('btn-log-hint');
-  if (hb) hb.textContent = '日志提示：' + (PREFS.logHints === false ? '关' : '开');
+  if (hb) hb.textContent = t('logHintT') + (PREFS.logHints === false ? t('off') : t('on'));
   var v = $('log-view');
   if (v) {
-    v.textContent = logLines.length ? logLines.join('\n') : '（暂无日志）';
+    v.textContent = logLines.length ? logLines.join('\n') : t('noLogs');
     v.scrollTop = v.scrollHeight;
   }
   var foot = $('log-foot');
   if (foot) {
     var last = '';
     try { last = localStorage.getItem('fntv_last_sync') || ''; } catch (e) { /* ignore */ }
-    foot.textContent = '当前日志共 ' + logLines.length + ' 行' + (last ? ' · 上次同步：' + last : '');
+    foot.textContent = fmtLogCount(logLines.length) + (last ? ' · ' + t('lastSync') + last : '');
   }
 }
 function importLog() {
-  if (!FN.proxy || !FN.token) { toast('未登录或未设代理，无法导入'); return; }
-  toast('正在从 NAS 导入…');
+  if (!FN.proxy || !FN.token) { toast(t('importNeed')); return; }
+  toast(t('importing'));
   fetch(FN.proxy + '/log-file?t=' + encodeURIComponent(FN.token)).then(function (r) {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.text();
@@ -221,7 +234,7 @@ function importLog() {
     v.textContent = txt || '（NAS 上暂无日志）';
     v.scrollTop = v.scrollHeight;
     $('log-foot').textContent = '已导入 NAS 上的日志 · ' + (txt ? txt.split('\n').length : 0) + ' 行（本地日志未改动）';
-  }).catch(function (e) { toast('导入失败: ' + e.message); });
+  }).catch(function (e) { toast(t('importFail') + e.message); });
 }
 /* Ship the on-screen log to the NAS proxy, which appends it to
    DockerAPPs/fntv-proxy/logs/fntv-tv.log where it can be read directly. */
@@ -234,8 +247,8 @@ function syncTimeStr() {
 }
 function setLastSync(text) {
   try { localStorage.setItem('fntv_last_sync', text); } catch (e) { /* ignore */ }
-  var h = $('home-sync'); if (h) h.textContent = '上次同步：' + text;
-  var s = $('set-sync'); if (s) s.textContent = '上次同步：' + text;
+  var h = $('home-sync'); if (h) h.textContent = t('lastSync') + text;
+  var s = $('set-sync'); if (s) s.textContent = t('lastSync') + text;
 }
 function logHintsOn() { return PREFS.logHints !== false; }
 function applyLogHints() {
@@ -252,7 +265,7 @@ function uploadLog(silent) {
   var timedOut = false;
   var to = setTimeout(function () {
     timedOut = true;
-    if (logHintsOn()) toast('日志同步失败(超时)');
+    if (logHintsOn()) toast(t('logSyncTimeout'));
     setLastSync('失败(超时) ' + syncTimeStr());
   }, 8000);
   fetch(FN.proxy + '/log?t=' + encodeURIComponent(FN.token), {
@@ -262,13 +275,13 @@ function uploadLog(silent) {
   }).then(function (r) {
     if (timedOut) return;
     clearTimeout(to);
-    if (logHintsOn()) toast(r.ok ? '日志已同步到 NAS' : '日志同步失败(' + r.status + ')');
+    if (logHintsOn()) toast(r.ok ? t('logSynced') : t('logSyncFailA') + r.status + ')');
     setLastSync((r.ok ? '成功 ' : '失败(' + r.status + ') ') + syncTimeStr());
     if (r.ok) appLog('日志已同步到 NAS');
   }).catch(function (e) {
     if (timedOut) return;
     clearTimeout(to);
-    if (logHintsOn()) toast('日志同步失败(网络)');
+    if (logHintsOn()) toast(t('logSyncNet'));
     setLastSync('失败(网络) ' + syncTimeStr());
   });
 }
@@ -358,7 +371,7 @@ function activate(e) {
     editing = true;
     editKeyHandled = false;
     e.focus();
-    toast(e.id === 'in-q' ? '输完按【确认】或【↓】跳到「搜索」按钮' : '输完按【确认】到下一项，按【返回】结束输入', 4000);
+    toast(e.id === 'in-q' ? t('searchHintText') : t('inputNextHint'), 4000);
     var done = function () {
       e.removeEventListener('blur', done);
       e.removeEventListener('focusout', done);
@@ -392,29 +405,29 @@ function withTimeout(p, ms, label) {
   return Promise.race([
     p,
     new Promise(function (resolve, reject) {
-      setTimeout(function () { reject(new Error(label + '超时（' + Math.round(ms / 1000) + ' 秒无响应）')); }, ms);
+      setTimeout(function () { reject(new Error(langIsEn() ? (label + ' timed out (' + Math.round(ms / 1000) + 's, no response)') : (label + '超时（' + Math.round(ms / 1000) + ' 秒无响应）'))); }, ms);
     })
   ]);
 }
 function doLogin() {
-  loginStatus('登录中…');
+  loginStatus(t('loginBusy'));
   var server = $('in-server').value.trim().replace(/\/+$/, '');
   var user = $('in-user').value.trim();
   var pass = $('in-pass').value;
   var proxy = $('in-proxy').value.trim().replace(/\/+$/, '');
-  if (!server || !user || !pass) { loginStatus('服务器/账号/密码都要填'); return; }
+  if (!server || !user || !pass) { loginStatus(t('loginNeed')); return; }
   FN.base = server; FN.proxy = proxy;
   appLog('尝试登录: ' + server + ' 账号 ' + user);
-  withTimeout(apiSysConfig(), 12000, '连接服务器').then(function (cfg) {
+  withTimeout(apiSysConfig(), 12000, langIsEn() ? 'Server connection' : '连接服务器').then(function (cfg) {
     FN.serverName = cfg.server_name || '';
-    return withTimeout(apiLogin(user, pass), 12000, '登录');
+    return withTimeout(apiLogin(user, pass), 12000, t('login'));
   }).then(function () {
     settingsSave(server, user, pass, proxy);
-    loginStatus('登录成功');
+    loginStatus(t('loginOk'));
     appLog('登录成功: ' + FN.serverName + ' @ ' + server);
     loadHome();
   }).catch(function (e) {
-    loginStatus('登录失败: ' + e.message);
+    loginStatus(t('loginFail') + e.message);
     appLog('登录失败: ' + e.message);
   });
 }
@@ -424,9 +437,9 @@ var homeRows = []; // {kind:'continue'|'lib', lib?, items:[], total, page, loadi
 function loadHome() {
   showScreen('home');
   setTimeout(function () { uploadLog(true); }, 10000); // auto-ship: unconditional, not gated on the media list
-  $('home-server').textContent = FN.serverName ? ('已连接 ' + FN.serverName) : '';
+  $('home-server').textContent = FN.serverName ? (t('connected') + FN.serverName) : '';
   $('home-empty').style.display = 'block';
-  $('home-empty').textContent = '正在加载媒体库…';
+  $('home-empty').textContent = t('loadingLibs');
   $('home-rows').innerHTML = '';
   homeRows = [];
   apiPlayList().then(function (list) {
@@ -435,10 +448,10 @@ function loadHome() {
       homeRows.push({ kind: 'continue', items: list });
       renderHomeRow(homeRows[homeRows.length - 1]);
     }
-  }).catch(function (e) { appLog('继续观看加载失败: ' + e.message); });
+  }).catch(function (e) { appLog(t('continueFail') + e.message); });
   apiMediaDbList().then(function (libs) {
     $('home-empty').style.display = 'none';
-    if (!libs || !libs.length) { $('home-empty').textContent = '没有媒体库'; $('home-empty').style.display = 'block'; return; }
+    if (!libs || !libs.length) { $('home-empty').textContent = t('noLibs'); $('home-empty').style.display = 'block'; return; }
     libs.forEach(function (lib) {
       var row = { kind: 'lib', lib: lib, items: [], total: 0, page: 0, loading: false };
       homeRows.push(row);
@@ -448,7 +461,7 @@ function loadHome() {
     var f = document.querySelector('#scr-home .card') || firstFocusable('home');
     if (f) setFocus(f);
   }).catch(function (e) {
-    $('home-empty').textContent = '媒体库加载失败: ' + e.message;
+    $('home-empty').textContent = t('libsFail') + e.message;
     appLog('媒体库加载失败: ' + e.message);
   });
 }
@@ -479,20 +492,20 @@ function loadLibPage(row) {
       row.items.push(it);
       row.cardsEl.appendChild(buildCard(it, row));
     });
-    if (row.countEl) row.countEl.textContent = row.total ? ('共 ' + row.total) : '';
+    if (row.countEl) row.countEl.textContent = row.total ? fmtTotal(row.total) : '';
   }).catch(function (e) {
     row.loading = false;
-    appLog('库「' + row.lib.title + '」加载失败: ' + e.message);
+    appLog((langIsEn() ? ('Library "' + row.lib.title + '" failed: ') : ('库「' + row.lib.title + '」加载失败: ')) + e.message);
   });
 }
 function renderHomeRow(row) {
   var block = el('div', 'row-block');
-  var title = el('div', 'row-title', row.kind === 'continue' ? '继续观看' : row.lib.title);
+  var title = el('div', 'row-title', row.kind === 'continue' ? t('continueWatching') : row.lib.title);
   if (row.kind === 'lib') {
     var cnt = el('span', 'row-count');
     title.appendChild(cnt);
     row.countEl = cnt;
-    var allBtn = el('button', 'all-link foc', '查看全部 →');
+    var allBtn = el('button', 'all-link foc', t('viewAll'));
     allBtn.__onenter = (function (lib) { return function () { openBrowse(lib); }; })(row.lib);
     title.appendChild(allBtn);
   }
@@ -604,7 +617,7 @@ function buildContinueCard(it) {
   card.id = 'ccard-' + it.guid;
   card.appendChild(imgTag(it, 500, true));
   var name = itemTitle(it);
-  if (it.parent_title) name = it.parent_title + (it.episode_number ? ' · 第' + it.episode_number + '集' : '');
+  if (it.parent_title) name = it.parent_title + (it.episode_number ? ' · ' + epLabel(it.episode_number) : '');
   card.appendChild(el('div', 'card-title', name));
   if (it.duration > 0 && it.ts != null) {
     var prog = el('div', 'prog');
@@ -664,7 +677,7 @@ function loadDetail(item) {
   $('detail-bg').removeAttribute('src');
   var root = $('detail-content');
   root.innerHTML = '';
-  root.appendChild(el('div', 'sec-title', '加载中…'));
+  root.appendChild(el('div', 'sec-title', t('loading2')));
   root.scrollTop = 0;
   D = { item: item, info: null, infoItem: item, seasons: [], seasonIdx: 0, episodes: [], children: [] };
   apiPlayInfo(item.guid).then(function (info) {
@@ -742,8 +755,8 @@ function renderDetail() {
   if ((ii.number_of_episodes || 0) > 0) meta.push('共 ' + ii.number_of_episodes + ' 集');
   if (item.type === 'TV') meta.push('剧集');
   else if (item.type === 'Movie') meta.push('电影');
-  else if (item.type === 'Video') meta.push('视频');
-  else if (item.type === 'Directory') meta.push('文件夹');
+  else if (item.type === 'Video') meta.push(t('typeVideo'));
+  else if (item.type === 'Directory') meta.push(t('typeFolder'));
   var metaEl = el('div', 'detail-meta');
   metaEl.innerHTML = '';
   meta.forEach(function (m, i) {
@@ -757,7 +770,7 @@ function renderDetail() {
   var btns = el('div', 'detail-btns');
   var target = pickPlayTarget();
   if (target) {
-    var pb = el('button', 'foc primary', target.resume ? '▶ 继续播放' : '▶ 播放');
+    var pb = el('button', 'foc primary', target.resume ? t('resumePlay') : t('play'));
     pb.id = 'detail-play';
     pb.__onenter = function () {
       startPlay(target.item, D.episodes.length ? { list: D.episodes, index: target.index } : null);
@@ -765,16 +778,16 @@ function renderDetail() {
     btns.appendChild(pb);
   }
   if (!ii.watched && isPlayable(item)) {
-    var wb = el('button', 'foc', '标为已看');
+    var wb = el('button', 'foc', t('markWatched'));
     wb.id = 'detail-watched';
     wb.__onenter = function () {
       apiSetWatched(item.guid).then(function () {
-        toast('已标为已看');
+        toast(t('markedWatched'));
         ii.watched = 1;
         wb.style.display = 'none';
         var p = $('detail-play');
         if (p) setFocus(p);
-      }).catch(function (e) { toast('操作失败: ' + e.message); });
+      }).catch(function (e) { toast(t('opFail') + e.message); });
     };
     btns.appendChild(wb);
   }
@@ -783,17 +796,17 @@ function renderDetail() {
   root.appendChild(head);
 
   if (D.seasons.length > 1) {
-    root.appendChild(el('div', 'sec-title', '季'));
+    root.appendChild(el('div', 'sec-title', t('seasonWord')));
     var chips = el('div', 'chip-row');
     D.seasons.forEach(function (s, idx) {
       var chip = el('div', 'chip num foc' + (idx === D.seasonIdx ? ' sel' : ''),
-        s.title || ('第' + (s.season_number || idx + 1) + '季'));
+        seasonLabel(s.season_number || idx + 1, s.title));
       chip.__onenter = function () {
         D.seasonIdx = idx;
         apiEpisodeList(s.guid || item.guid).then(function (eps) {
           D.episodes = eps || [];
           renderDetail();
-        }).catch(function (e) { toast('加载剧集失败: ' + e.message); });
+        }).catch(function (e) { toast(t('epsFail') + e.message); });
       };
       chips.appendChild(chip);
     });
@@ -807,9 +820,9 @@ function renderDetail() {
     D.episodes.forEach(function (ep, idx) { row.appendChild(buildEpCard(ep, idx)); });
     root.appendChild(row);
     if (D.episodes.length >= 1) {
-      root.appendChild(el('div', 'sec-title', '选集'));
+      root.appendChild(el('div', 'sec-title', t('episodes')));
       root.appendChild(buildNumChips(D.episodes, function (ep, idx) {
-        return ep.episode_number ? '第' + ep.episode_number + '集' : '第' + (idx + 1) + '集';
+        return epLabel(ep.episode_number || idx + 1);
       }, function (ep, idx) { startPlay(ep, { list: D.episodes, index: idx }); }));
     }
   }
@@ -844,7 +857,7 @@ function renderDetail() {
   }
 
   if (!D.episodes.length && !D.children.length && isPlayable(item)) {
-    root.appendChild(el('div', 'sec-title', '选集'));
+    root.appendChild(el('div', 'sec-title', t('episodes')));
     root.appendChild(buildNumChips([item], function (it) {
       return codeLabel(it);
     }, function (it) { startPlay(it, null); }));
@@ -864,7 +877,7 @@ function codeLabel(it) {
   var t = itemTitle(it);
   var m = t.match(/[A-Za-z]{2,}-?\d{2,}/);
   if (m) return m[0].toUpperCase();
-  if (it.episode_number) return '第' + it.episode_number + '集';
+  if (it.episode_number) return epLabel(it.episode_number);
   var n = t.match(/\d+/);
   return n ? n[0] : t.slice(0, 10);
 }
@@ -881,11 +894,11 @@ function buildEpCard(ep, idx) {
   var card = el('div', 'ep-card foc');
   card.id = 'card-' + ep.guid;
   card.appendChild(imgTag(ep, 500, false));
-  var label = (ep.episode_number ? '第' + ep.episode_number + '集' : '第' + (idx + 1) + '集');
+  var label = epLabel(ep.episode_number || idx + 1);
   if (ep.title && ep.title !== label) label += ' · ' + ep.title;
   card.appendChild(el('div', 'ep-title', label));
   var done = ep.watched || (ep.duration > 0 && ep.ts >= ep.duration - 10);
-  if (done) card.appendChild(el('div', 'ep-done', '已看'));
+  if (done) card.appendChild(el('div', 'ep-done', t('watchedBadge')));
   else if (ep.ts > 5 && ep.duration > 0) {
     var prog = el('div', 'prog');
     var fill = el('div');
@@ -910,7 +923,7 @@ var PL = {
   skipOpenApplied: false, lastBarBtn: 'btn-pp', panelKind: ''
 };
 var RATES = [1, 1.25, 1.5, 2, 0.5];
-var RATIO_LABEL = { fit: '适应', fill: '拉伸', zoom: '放大' };
+function ratioLabel() { return langIsEn() ? { fit: 'Fit', fill: 'Stretch', zoom: 'Zoom' } : { fit: '适应', fill: '拉伸', zoom: '放大' }; }
 function playerMsg(msg) { $('player-msg').textContent = msg || ''; }
 function avplayReset() {
   try {
@@ -984,7 +997,7 @@ function startPlay(item, ctx) {
   showScreen('player');
   $('ppanel').style.display = 'none';
   $('osd').style.display = 'none';
-  playerMsg('加载中…');
+  playerMsg(t('loading2'));
   appLog('播放: ' + itemTitle(item));
   apiPlayInfo(item.guid).then(function (info) {
     if (session !== PL.session || !PL.active) throw new Error('已取消');
@@ -1046,12 +1059,12 @@ function avplayStart(url, cookie) {
     var proceed = function () {
     webapis.avplay.setDisplayRect(0, 0, 1920, 1080);
     webapis.avplay.setListener({
-      onbufferingstart: function () { playerMsg('缓冲中…'); },
+      onbufferingstart: function () { playerMsg(t('buffering')); },
       onbufferingcomplete: function () { playerMsg(''); },
       onstreamcompleted: function () { onPlayCompleted(); },
       onerror: function (e) {
         appLog('AVPlay 播放错误: ' + e);
-        playerMsg('播放出错');
+        playerMsg(t('playError'));
       },
       ondrmevent: function () {}
     });
@@ -1068,12 +1081,12 @@ function avplayStart(url, cookie) {
       var cfg = (PL.info && PL.info.play_config) || {};
       if (resume > 5 && dur > 0 && resume < dur - 15) {
         try { webapis.avplay.seekTo(Math.floor(resume * 1000)); } catch (e) { /* ignore */ }
-        playerMsg('从 ' + fmtTime(resume) + ' 继续播放');
+        playerMsg(t('resumeFromA') + fmtTime(resume) + t('resumeFromB'));
         setTimeout(function () { playerMsg(''); }, 3000);
         PL.skipOpenApplied = true;
       } else if (cfg.skip_opening > 0 && dur > cfg.skip_opening + 30) {
         try { webapis.avplay.seekTo(Math.floor(cfg.skip_opening * 1000)); } catch (e) { /* ignore */ }
-        playerMsg('已跳过片头');
+        playerMsg(t('introSkipped'));
         setTimeout(function () { playerMsg(''); }, 2500);
         PL.skipOpenApplied = true;
       }
@@ -1103,7 +1116,7 @@ function avplayStart(url, cookie) {
     PL.subCues = null;
     stopSubTimer();
     if (sub && FN.proxy) {
-      playerMsg('加载字幕…');
+      playerMsg(t('loadingSub'));
       fetchSubCues(sub.guid, function (cues) {
         if (!PL.active || session !== PL.session) return;
         if (cues) {
@@ -1189,10 +1202,10 @@ function updateOSD() {
   var cur = curSec(), dur = durSec();
   $('osd-cur').textContent = fmtTime(cur);
   $('osd-dur').textContent = fmtTime(dur);
-  $('osd-state').textContent = PL.paused ? '❚❚ 已暂停' : '';
+  $('osd-state').textContent = PL.paused ? t('paused') : '';
   $('osd-fill').style.width = dur > 0 ? Math.min(100, cur * 100 / dur) + '%' : '0%';
   var pp = $('btn-pp');
-  if (pp) pp.textContent = PL.paused ? '▶ 播放' : '❚❚ 暂停';
+  if (pp) pp.textContent = PL.paused ? t('playBtn') : t('pauseBtn');
   // Skip-ending: jump to the next episode when the configured tail is reached.
   var cfg = (PL.info && PL.info.play_config) || {};
   if (!PL.completed && cfg.skip_ending > 0 && PL.ctx && PL.ctx.index >= 0 &&
@@ -1221,7 +1234,7 @@ function onPlayCompleted() {
   var ctx = PL.ctx;
   if (PREFS.autoNext && ctx && ctx.list && ctx.index >= 0 && ctx.index < ctx.list.length - 1) {
     var next = ctx.list[ctx.index + 1];
-    toast('下一集');
+    toast(t('toastNext'));
     startPlay(next, { list: ctx.list, index: ctx.index + 1 });
   } else {
     exitPlayer(true);
@@ -1250,8 +1263,8 @@ function refreshBarButtons() {
   var hasNext = !!(PL.ctx && PL.ctx.index >= 0 && PL.ctx.index < PL.ctx.list.length - 1);
   $('btn-prev').style.display = hasPrev ? '' : 'none';
   $('btn-next').style.display = hasNext ? '' : 'none';
-  $('btn-ratio').textContent = '画面：' + RATIO_LABEL[PL.ratio];
-  $('btn-pp').textContent = PL.paused ? '▶ 播放' : '❚❚ 暂停';
+  $('btn-ratio').textContent = t('aspectPrefix') + ratioLabel()[PL.ratio];
+  $('btn-pp').textContent = PL.paused ? t('playBtn') : t('pauseBtn');
 }
 function clearPlayerFocus() {
   if (curFocus && $('scr-player').contains(curFocus)) setFocus(null);
@@ -1292,11 +1305,11 @@ function openPanel(kind) {
   list.innerHTML = '';
   panel.style.display = 'block';
   if (kind === 'eps') {
-    $('ppanel-title').textContent = '选集';
+    $('ppanel-title').textContent = t('episodes');
     buildEpisodePanel(list); // focuses the current episode itself
     return;
   }
-  $('ppanel-title').textContent = kind === 'TEXT' ? '字幕' : '音轨';
+  $('ppanel-title').textContent = kind === 'TEXT' ? t('subtitlesBtn') : t('audioBtn');
   buildTrackPanel(list, kind);
   var f = list.querySelector('.foc');
   if (f) setFocus(f);
@@ -1305,25 +1318,25 @@ function buildEpisodePanel(list) {
   function fill(ctx) {
     list.innerHTML = '';
     if (!ctx || !ctx.list || !ctx.list.length) {
-      var noneRow = panelRow('（无选集信息）', null);
+      var noneRow = panelRow(t('noEpInfo'), null);
       list.appendChild(noneRow);
       setFocus(noneRow);
       return;
     }
     var curRow = null;
     ctx.list.forEach(function (ep, idx) {
-      var label = (ep.episode_number ? '第' + ep.episode_number + '集' : '第' + (idx + 1) + '集') + ' · ' + itemTitle(ep);
+      var label = epLabel(ep.episode_number || idx + 1) + ' · ' + itemTitle(ep);
       var row = panelRow(label, function () {
         startPlay(ep, { list: ctx.list, index: idx });
       });
-      if (PL.item && ep.guid === PL.item.guid) { label += '（播放中）'; row.textContent = label; curRow = row; }
+      if (PL.item && ep.guid === PL.item.guid) { label += t('playingNow'); row.textContent = label; curRow = row; }
       list.appendChild(row);
     });
     var f = curRow || list.querySelector('.foc');
     if (f) setFocus(f);
   }
   if (PL.ctx && PL.ctx.list) { fill(PL.ctx); return; }
-  var loadingRow = panelRow('加载中…', null);
+  var loadingRow = panelRow(t('loading2'), null);
   list.appendChild(loadingRow);
   setFocus(loadingRow);
   var it = PL.item;
@@ -1340,13 +1353,13 @@ function buildEpisodePanel(list) {
     fill(null);
   }
 }
-function trackLabel(t) {
+function trackLabel(trk) {
   var extra = '';
   try {
-    var j = JSON.parse(t.extra_info || '{}');
+    var j = JSON.parse(trk.extra_info || '{}');
     extra = j.language || j.title || j.name || '';
   } catch (e) { extra = ''; }
-  return (t.type === 'TEXT' ? '字幕 ' : '音轨 ') + (t.index + 1) + (extra ? ' · ' + extra : '');
+  return (trk.type === 'TEXT' ? t('subtitlesBtn') + ' ' : t('audioBtn') + ' ') + (trk.index + 1) + (extra ? ' · ' + extra : '');
 }
 /* fnOS subtitle streams (from stream/list): external ones are separate
    files served by /subtitle/dl/<guid>; embedded ones live in the media
@@ -1497,7 +1510,7 @@ function restartPlaybackWithSub(stream) {
   PL.activeSubGuid = stream ? stream.guid : '';
   PL.seekOverride = pos > 2 ? Math.floor(pos) : 0;
   PL.defaultEmbIdx = -1;
-  toast(stream ? '加载字幕…' : '字幕已关闭');
+  toast(stream ? t('loadingSub') : t('subOff'));
   appLog('重载播放器切换字幕: ' + (stream ? (stream.title || stream.guid) : '关闭') + ' @' + Math.floor(pos) + 's');
   avplayStart(PL.url, PL.cookie);
 }
@@ -1542,9 +1555,9 @@ function buildTrackPanel(list, type) {
     list.appendChild(panelRow(trackLabel(t), function () {
       try {
         webapis.avplay.setSelectTrack(type, t.index);
-        toast('已切换' + (type === 'TEXT' ? '字幕' : '音轨'));
+        toast(t('switchedTo') + (type === 'TEXT' ? t('subtitlesBtn') : t('audioBtn')));
       } catch (e) {
-        toast('切换失败: ' + e.message);
+        toast(t('switchFail') + e.message);
         appLog('setSelectTrack 失败: ' + e.message);
       }
       closePanel();
@@ -1642,32 +1655,40 @@ function openBrowse(lib) {
    values are TMDB ids, localized locally. One value per dimension. */
 var BF = null;
 var BF_OPTS = null;
-var GENRE_ZH = { 1: '动作', 2: '冒险', 3: '动画', 4: '喜剧', 5: '犯罪', 6: '纪录', 7: '剧情', 8: '家庭', 9: '科幻奇幻', 10: '历史', 11: '恐怖', 12: '音乐', 13: '悬疑', 14: '爱情', 16: '电视电影', 17: '惊悚', 18: '战争政治', 19: '西部', 30: '动作冒险', 31: '儿童', 32: '新闻', 33: '真人秀', 35: '肥皂剧', 36: '脱口秀', 101: '体育', 102: '财经', 103: '教育', 104: '生活', 105: '本地', 106: '其他', 109: '电视剧', 110: '综艺', 111: '儿童' };
-var LOCATE_ZH = { US: '美国', CN: '中国大陆', HK: '中国香港', TW: '中国台湾', JP: '日本', KR: '韩国', GB: '英国', FR: '法国', DE: '德国', AT: '奥地利', MX: '墨西哥', CA: '加拿大', AU: '澳大利亚', IN: '印度', IT: '意大利', ES: '西班牙', RU: '俄罗斯' };
+var GENRE_NAMES = {
+  zh: { 1: '动作', 2: '冒险', 3: '动画', 4: '喜剧', 5: '犯罪', 6: '纪录', 7: '剧情', 8: '家庭', 9: '科幻奇幻', 10: '历史', 11: '恐怖', 12: '音乐', 13: '悬疑', 14: '爱情', 16: '电视电影', 17: '惊悚', 18: '战争政治', 19: '西部', 30: '动作冒险', 31: '儿童', 32: '新闻', 33: '真人秀', 35: '肥皂剧', 36: '脱口秀', 101: '体育', 102: '财经', 103: '教育', 104: '生活', 105: '本地', 106: '其他', 109: '电视剧', 110: '综艺', 111: '儿童' },
+  en: { 1: 'Action', 2: 'Adventure', 3: 'Animation', 4: 'Comedy', 5: 'Crime', 6: 'Documentary', 7: 'Drama', 8: 'Family', 9: 'Sci-Fi & Fantasy', 10: 'History', 11: 'Horror', 12: 'Music', 13: 'Mystery', 14: 'Romance', 16: 'TV Movie', 17: 'Thriller', 18: 'War & Politics', 19: 'Western', 30: 'Action & Adventure', 31: 'Kids', 32: 'News', 33: 'Reality', 35: 'Soap', 36: 'Talk', 101: 'Sports', 102: 'Finance', 103: 'Education', 104: 'Lifestyle', 105: 'Local', 106: 'Others', 109: 'TV Series', 110: 'Variety', 111: 'Kids' }
+};
+var LOCATE_NAMES = {
+  zh: { US: '美国', CN: '中国大陆', HK: '中国香港', TW: '中国台湾', JP: '日本', KR: '韩国', GB: '英国', FR: '法国', DE: '德国', AT: '奥地利', MX: '墨西哥', CA: '加拿大', AU: '澳大利亚', IN: '印度', IT: '意大利', ES: '西班牙', RU: '俄罗斯' },
+  en: { US: 'United States', CN: 'China', HK: 'Hong Kong', TW: 'Taiwan', JP: 'Japan', KR: 'South Korea', GB: 'United Kingdom', FR: 'France', DE: 'Germany', AT: 'Austria', MX: 'Mexico', CA: 'Canada', AU: 'Australia', IN: 'India', IT: 'Italy', ES: 'Spain', RU: 'Russia' }
+};
 function bfDefaults() {
   return { type: '', genres: -1, resolution: '', color_range: '', audio_type: '', locate: '', decade: '', recognition_status: '', watched: '' };
 }
 var BF_DIMS = [
-  { key: 'type', label: '影视分类', fixed: [['', '全部'], ['Movie', '电影'], ['TV', '电视节目']] },
-  { key: 'genres', label: '类型', src: 'genres' },
-  { key: 'resolution', label: '分辨率', src: 'resolutions' },
-  { key: 'color_range', label: '动态范围', src: 'color_range' },
-  { key: 'audio_type', label: '音频规格', src: 'audio_type' },
-  { key: 'locate', label: '国家/地区', src: 'locate' },
-  { key: 'decade', label: '发行年份', src: 'decades' },
-  { key: 'recognition_status', label: '匹配状态', src: 'recognition_status' },
-  { key: 'watched', label: '是否已观看', fixed: [['', '全部'], ['1', '已观看'], ['0', '未观看']] }
+  { key: 'type', labelKey: 'dimType', fixed: [['', 'all'], ['Movie', 'movie'], ['TV', 'tv']] },
+  { key: 'genres', labelKey: 'dimGenres', src: 'genres' },
+  { key: 'resolution', labelKey: 'dimResolution', src: 'resolutions' },
+  { key: 'color_range', labelKey: 'dimColor', src: 'color_range' },
+  { key: 'audio_type', labelKey: 'dimAudio', src: 'audio_type' },
+  { key: 'locate', labelKey: 'dimLocate', src: 'locate' },
+  { key: 'decade', labelKey: 'dimDecade', src: 'decades' },
+  { key: 'recognition_status', labelKey: 'dimRecognition', src: 'recognition_status' },
+  { key: 'watched', labelKey: 'dimWatched', fixed: [['', 'all'], ['1', 'watchedYes'], ['0', 'watchedNo']] }
 ];
 function bfLabel(dim, v) {
-  if (dim === 'genres') return GENRE_ZH[v] || ('类型 ' + v);
+  var lang = langIsEn() ? 'en' : 'zh';
+  if (dim === 'genres') return GENRE_NAMES[lang][v] || (t('genreFallback') + v);
   if (dim === 'decade') {
-    if (v === 'Recent') return '今年';
+    if (v === 'Recent') return t('thisYear');
     var m = /^(\d{4})s$/.exec(String(v));
-    return m ? m[1] + '年代' : String(v);
+    if (!m) return String(v);
+    return langIsEn() ? m[1] + 's' : m[1] + '年代';
   }
-  if (dim === 'recognition_status') return ({ '0': '未匹配', '1': '已匹配', '2': '读取 NFO' })[String(v)] || ('状态 ' + v);
-  if (dim === 'locate') return LOCATE_ZH[v] || String(v);
-  if (dim === 'audio_type') return ({ atmos: '杜比全景声', stereo: '立体声', other: '其他' })[String(v).toLowerCase()] || String(v);
+  if (dim === 'recognition_status') return ({ '0': t('rec0'), '1': t('rec1'), '2': t('rec2') })[String(v)] || (t('statusFallback') + v);
+  if (dim === 'locate') return LOCATE_NAMES[lang][v] || String(v);
+  if (dim === 'audio_type') return ({ atmos: t('atmos'), stereo: t('stereo'), other: t('other') })[String(v).toLowerCase()] || String(v);
   return String(v);
 }
 function browseTags() {
@@ -1686,14 +1707,14 @@ function buildFilterPanel() {
   host.innerHTML = '';
   BF_DIMS.forEach(function (dim) {
     var opts = null;
-    if (dim.fixed) opts = dim.fixed;
+    if (dim.fixed) opts = dim.fixed.map(function (pr) { return [pr[0], t(pr[1])]; });
     else if (BF_OPTS && BF_OPTS[dim.src] && BF_OPTS[dim.src].length) {
-      opts = [[dim.key === 'genres' ? -1 : '', '全部']];
+      opts = [[dim.key === 'genres' ? -1 : '', t('all')]];
       BF_OPTS[dim.src].forEach(function (v) { opts.push([v, bfLabel(dim.key, v)]); });
     }
     if (!opts) return;
     var rowEl = el('div', 'flt-row');
-    rowEl.appendChild(el('span', 'flt-label', dim.label));
+    rowEl.appendChild(el('span', 'flt-label', t(dim.labelKey)));
     var chips = el('div', 'flt-chips');
     opts.forEach(function (pair) {
       var b = el('button', 'foc chip flt-chip', pair[1]);
@@ -1748,17 +1769,17 @@ function closeFilters() {
 function doSearch() {
   var q = $('in-q').value.trim();
   var box = $('search-results');
-  if (!q) { $('search-status').textContent = '先输入关键词'; return; }
-  $('search-status').textContent = '搜索中…';
+  if (!q) { $('search-status').textContent = t('searchFirst'); return; }
+  $('search-status').textContent = t('searching');
   box.innerHTML = '';
   apiSearch(q).then(function (list) {
     list = list || [];
-    $('search-status').textContent = '找到 ' + list.length + ' 条';
+    $('search-status').textContent = fmtFound(list.length);
     list.forEach(function (it) { box.appendChild(buildCard(it, null)); });
     var f = box.querySelector('.foc');
     if (f) setFocus(f);
   }).catch(function (e) {
-    $('search-status').textContent = '搜索失败: ' + e.message;
+    $('search-status').textContent = t('searchFail') + e.message;
     appLog('搜索失败: ' + e.message);
   });
 }
@@ -1819,10 +1840,8 @@ function applySearchMode() {
   $('kb').style.display = kbOn ? 'block' : 'none';
   $('q-display').style.display = kbOn ? 'inline-block' : 'none';
   $('in-q').style.display = kbOn ? 'none' : '';
-  $('btn-kbmode').textContent = kbOn ? '中文输入' : '字母键盘';
-  $('search-hint').textContent = kbOn
-    ? '方向键选字母、按确认输入（可输首字母，如 LLDQ）；输完按「搜索」'
-    : '输入完按【确认】或【↓】，跳到「搜索」按钮，再按【确认】开始搜索';
+  $('btn-kbmode').textContent = kbOn ? t('kbChinese') : t('kbLetters');
+  $('search-hint').textContent = kbOn ? t('searchHintKb') : t('searchHintText');
   $('search-scroll').style.height = kbOn ? '380px' : '816px';
   syncQDisplay();
 }
@@ -1835,17 +1854,18 @@ function openSearch() {
 
 function refreshSettings() {
   $('set-account').textContent = (FN.user || '') + ' @ ' + (FN.base || '');
-  $('set-proxy').textContent = '播放/图片代理：' + (FN.proxy || '未设置');
-  $('btn-set-ratio').textContent = '默认画面模式：' + RATIO_LABEL[PREFS.ratio];
-  $('btn-set-autonext').textContent = '完播自动连播下一集：' + (PREFS.autoNext ? '开' : '关');
-  $('btn-set-resume').textContent = '断点续播：' + (PREFS.resume ? '开' : '关');
-  $('btn-set-seek').textContent = '快进/快退步长：' + PREFS.seekStep + ' 秒';
-  $('btn-set-osd').textContent = '播控界面自动隐藏：' + PREFS.osdSec + ' 秒';
-  $('btn-set-scale').textContent = '焦点放大比例：' + Math.round((PREFS.focusScale || 1.16) * 100) + '%';
-  $('btn-set-tz').textContent = '时钟时区：' + tzLabel();
+  $('set-proxy').textContent = t('setProxy') + (FN.proxy || t('notSet'));
+  $('btn-set-ratio').textContent = t('setRatio') + ratioLabel()[PREFS.ratio];
+  $('btn-set-autonext').textContent = t('setAutoNext') + (PREFS.autoNext ? t('on') : t('off'));
+  $('btn-set-resume').textContent = t('setResume') + (PREFS.resume ? t('on') : t('off'));
+  $('btn-set-seek').textContent = t('setSeek') + PREFS.seekStep + t('seconds');
+  $('btn-set-osd').textContent = t('setOsd') + PREFS.osdSec + t('seconds');
+  $('btn-set-scale').textContent = t('setScale') + Math.round((PREFS.focusScale || 1.16) * 100) + '%';
+  $('btn-set-tz').textContent = t('setTz') + tzLabel();
+  $('btn-set-lang').textContent = t('setLang') + (langIsEn() ? 'English' : '中文');
 }
 function tzLabel() {
-  if (typeof PREFS.tzOffset !== 'number') return '自动（跟随电视）';
+  if (typeof PREFS.tzOffset !== 'number') return t('tzAuto');
   var o = PREFS.tzOffset, a = Math.abs(o);
   return 'UTC' + (o < 0 ? '−' : '+') + Math.floor(a / 60) + (a % 60 ? ':' + ('0' + (a % 60)).slice(-2) : '');
 }
@@ -1883,17 +1903,23 @@ function wireSettings() {
     PREFS.tzOffset = opts[(opts.indexOf(cur) + 1) % opts.length];
     prefsSave(); refreshSettings();
     if (window.tickFnTvClock) window.tickFnTvClock();
-    toast('时钟时区：' + tzLabel());
+    toast(t('setTz') + tzLabel());
   };
   $('btn-set-logout').__onenter = function () {
     FN.token = '';
     showScreen('login');
-    loginStatus('已退出登录');
+    loginStatus(t('loggedOut'));
     setFocus($('btn-login'));
   };
   $('btn-set-wipe').__onenter = function () {
     settingsClear();
-    toast('已清除本机保存的账号密码');
+    toast(t('wiped'));
+  };
+  $('btn-set-lang').__onenter = function () {
+    PREFS.lang = langIsEn() ? 'zh' : 'en';
+    prefsSave();
+    toast(t('langSwitched'));
+    setTimeout(function () { location.reload(); }, 700);
   };
   $('btn-set-back').__onenter = function () { showScreen('home'); };
 }
@@ -1906,7 +1932,7 @@ window.addEventListener('load', function () {
     });
   } catch (e) { /* not on TV */ }
 
-  prefsLoad(); applyFocusScale(); applyLogHints(); buildKeyboard(); applySearchMode();
+  prefsLoad(); applyI18n(); applyFocusScale(); applyLogHints(); buildKeyboard(); applySearchMode();
   wirePlayerButtons();
   wireSettings();
   $('btn-home-search').__onenter = function () { openSearch(); };
@@ -1936,7 +1962,7 @@ window.addEventListener('load', function () {
     renderLogPage();
     toast('日志提示已' + (PREFS.logHints ? '开启' : '关闭'));
   };
-  $('btn-log-clear').__onenter = function () { logLines = []; renderLogPage(); toast('日志已清空'); };
+  $('btn-log-clear').__onenter = function () { logLines = []; renderLogPage(); toast(t('logCleared')); };
   $('btn-log-back').__onenter = function () { showScreen(logReturn || 'home'); };
   $('btn-dosearch').__onenter = doSearch;
   $('btn-browse-filter').__onenter = function () {
@@ -1970,7 +1996,7 @@ window.addEventListener('load', function () {
   showScreen('login');
   if (s.user && s.pass && s.server) {
     setFocus($('btn-login'));
-    loginStatus('自动登录中…');
+    loginStatus(t('autoLoginBusy'));
     doLogin();
   } else {
     setFocus(s.user ? $('btn-login') : $('in-user'));
@@ -1980,7 +2006,7 @@ window.addEventListener('load', function () {
     var c = $('home-clock');
     if (!c) return;
     function p(n) { return (n < 10 ? '0' : '') + n; }
-    var wk = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    var wk = langIsEn() ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] : ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
     var y, mo, da, wd, hh, mi;
     if (typeof PREFS.tzOffset === 'number') {
       // Manual zone from Settings: shift the UTC clock by the offset.
@@ -2000,7 +2026,7 @@ window.addEventListener('load', function () {
         wd = d.getDay(); hh = d.getHours(); mi = d.getMinutes();
       }
     }
-    c.textContent = y + '年' + mo + '月' + da + '日 ' + wk[wd] + ' ' + p(hh) + ':' + p(mi);
+    c.textContent = langIsEn() ? (wk[wd] + ', ' + mo + '/' + da + '/' + y + ' ' + p(hh) + ':' + p(mi)) : (y + '年' + mo + '月' + da + '日 ' + wk[wd] + ' ' + p(hh) + ':' + p(mi));
   }
   window.tickFnTvClock = tickClock;
   tickClock();

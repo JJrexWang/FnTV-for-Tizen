@@ -14,33 +14,33 @@
   <div id="scr-login" class="screen">
     <div class="login-panel">
       <div class="logo"><img class="login-icon" src="icon.png" alt=""/>FnTV</div>
-      <div class="login-sub">飞牛影视 · 电视客户端</div>
-      <div class="frow"><label>服务器</label><input id="in-server" type="text" value="" placeholder="http://192.168.1.10:5666"/></div>
-      <div class="frow"><label>飞牛账号</label><input id="in-user" type="text" value=""/></div>
-      <div class="frow"><label>密码</label><input id="in-pass" type="password" value=""/></div>
-      <div class="frow"><label>播放代理</label><input id="in-proxy" type="text" value="" placeholder="http://192.168.1.10:18090"/></div>
+      <div class="login-sub" data-i18n="appSubtitle">飞牛影视 · 电视客户端</div>
+      <div class="frow"><label data-i18n="server">服务器</label><input id="in-server" type="text" value="" placeholder="http://192.168.1.10:5666"/></div>
+      <div class="frow"><label data-i18n="account">飞牛账号</label><input id="in-user" type="text" value=""/></div>
+      <div class="frow"><label data-i18n="password">密码</label><input id="in-pass" type="password" value=""/></div>
+      <div class="frow"><label data-i18n="proxy">播放代理</label><input id="in-proxy" type="text" value="" placeholder="http://192.168.1.10:18090"/></div>
       <div class="frow btns">
-        <button id="btn-login">登录</button>
-        <button id="btn-clear">清除保存</button>
-        <button id="btn-login-log">日志</button>
+        <button id="btn-login" data-i18n="login">登录</button>
+        <button id="btn-clear" data-i18n="clearSaved">清除保存</button>
+        <button id="btn-login-log" data-i18n="logs">日志</button>
       </div>
-      <div id="login-status" class="status-line">操作：选中输入框按【确认】打开键盘输入；输完再按【确认】自动到下一项；【返回】结束输入</div>
+      <div id="login-status" class="status-line" data-i18n="loginHint">操作：选中输入框按【确认】打开键盘输入；输完再按【确认】自动到下一项；【返回】结束输入</div>
     </div>
   </div>
 
   <!-- HOME -->
   <div id="scr-home" class="screen">
     <div class="topbar">
-      <img class="topbar-icon" src="icon.png" alt=""><div class="logo-sm">FnTV v1.5.1</div>
+      <img class="topbar-icon" src="icon.png" alt=""><div class="logo-sm">FnTV v1.6.0</div>
       <div id="home-server" class="topbar-sub"></div>
-      <div id="home-sync" class="topbar-sub">上次同步：未同步</div>
-      <button id="btn-home-search" class="topbtn foc">🔍 搜索</button>
-      <button id="btn-home-settings" class="topbtn foc">⚙ 设置</button>
-      <button id="btn-home-log" class="topbtn foc">📋 日志</button>
+      <div id="home-sync" class="topbar-sub sync-initial">上次同步：未同步</div>
+      <button id="btn-home-search" class="topbtn foc">🔍 <span data-i18n="search">搜索</span></button>
+      <button id="btn-home-settings" class="topbtn foc">⚙ <span data-i18n="settings">设置</span></button>
+      <button id="btn-home-log" class="topbtn foc">📋 <span data-i18n="logs">日志</span></button>
       <div id="home-clock" class="topbar-clock"></div>
     </div>
     <div id="home-scroll"><div id="home-rows"></div></div>
-    <div id="home-empty" class="empty-note" style="display:none">正在加载…</div>
+    <div id="home-empty" class="empty-note" style="display:none" data-i18n="loading">正在加载…</div>
   </div>
 
   <!-- DETAIL -->
@@ -55,10 +55,10 @@
     <div class="topbar">
       <div id="browse-title" class="logo-sm"></div>
       <span id="browse-count" class="topbar-sub"></span>
-      <button id="btn-browse-filter" class="foc topbtn">筛选</button>
+      <button id="btn-browse-filter" class="foc topbtn" data-i18n="filter">筛选</button>
     </div>
     <div id="browse-filters">
-      <div class="flt-head"><span class="flt-title">筛选</span><button id="btn-browse-reset" class="foc">重置</button><span class="flt-hint">点选条件即时生效；再按顶栏「筛选」收起</span></div>
+      <div class="flt-head"><span class="flt-title" data-i18n="filter">筛选</span><button id="btn-browse-reset" class="foc" data-i18n="reset">重置</button><span class="flt-hint" data-i18n="filterHint">点选条件即时生效；再按顶栏「筛选」收起</span></div>
       <div id="browse-filter-rows"></div>
     </div>
     <div id="browse-scroll"><div id="browse-grid" class="grid-wrap"></div></div>
@@ -66,11 +66,11 @@
 
   <!-- SEARCH -->
   <div id="scr-search" class="screen">
-    <div class="topbar"><div class="logo-sm">搜索</div></div>
+    <div class="topbar"><div class="logo-sm" data-i18n="search">搜索</div></div>
     <div class="search-bar">
-      <div id="q-display" class="q-display"><span id="q-text"></span><span id="q-ph" class="q-ph">输入片名首字母，如 LLDQ</span></div>
+      <div id="q-display" class="q-display"><span id="q-text"></span><span id="q-ph" class="q-ph" data-i18n="kbPlaceholder">输入片名首字母，如 LLDQ</span></div>
       <input id="in-q" class="foc" type="text" value=""/>
-      <button id="btn-dosearch" class="foc primary">搜索</button>
+      <button id="btn-dosearch" class="foc primary" data-i18n="search">搜索</button>
       <button id="btn-kbmode" class="foc">中文输入</button>
       <span id="search-status" class="status-line"></span>
     </div>
@@ -81,11 +81,11 @@
 
   <!-- SETTINGS -->
   <div id="scr-settings" class="screen">
-    <div class="topbar"><div class="logo-sm">设置</div></div>
+    <div class="topbar"><div class="logo-sm" data-i18n="settings">设置</div></div>
     <div class="set-wrap">
-      <div class="set-info">账号：<span id="set-account"></span></div>
+      <div class="set-info"><span data-i18n="accountLabel">账号：</span><span id="set-account"></span></div>
       <div class="set-info" id="set-proxy"></div>
-      <div class="set-info" id="set-sync">上次同步：未同步</div>
+      <div class="set-info sync-initial" id="set-sync">上次同步：未同步</div>
       <div class="set-grid">
         <div class="set-row"><button id="btn-set-ratio" class="foc setbtn"></button></div>
         <div class="set-row"><button id="btn-set-autonext" class="foc setbtn"></button></div>
@@ -94,25 +94,26 @@
         <div class="set-row"><button id="btn-set-osd" class="foc setbtn"></button></div>
         <div class="set-row"><button id="btn-set-scale" class="foc setbtn"></button></div>
         <div class="set-row"><button id="btn-set-tz" class="foc setbtn"></button></div>
-        <div class="set-row"><button id="btn-set-log" class="foc setbtn">日志管理</button></div>
-        <div class="set-row"><button id="btn-set-logout" class="foc setbtn">退出登录（回登录页）</button></div>
-        <div class="set-row"><button id="btn-set-wipe" class="foc setbtn">清除保存的账号密码</button></div>
-        <div class="set-row"><button id="btn-set-back" class="foc setbtn">← 返回</button></div>
+        <div class="set-row"><button id="btn-set-lang" class="foc setbtn"></button></div>
+        <div class="set-row"><button id="btn-set-log" class="foc setbtn" data-i18n="logMgmt">日志管理</button></div>
+        <div class="set-row"><button id="btn-set-logout" class="foc setbtn" data-i18n="logout">退出登录（回登录页）</button></div>
+        <div class="set-row"><button id="btn-set-wipe" class="foc setbtn" data-i18n="wipe">清除保存的账号密码</button></div>
+        <div class="set-row"><button id="btn-set-back" class="foc setbtn" data-i18n="back">← 返回</button></div>
       </div>
-      <div class="set-info dim">FnTV v1.5.1 · 偏好保存在电视本机</div>
+      <div class="set-info dim ver-line" data-ver="FnTV v1.6.0">FnTV v1.6.0 · 偏好保存在电视本机</div>
     </div>
   </div>
 
   <!-- LOGS -->
   <div id="scr-logs" class="screen">
-    <div class="topbar"><div class="logo-sm">日志</div></div>
+    <div class="topbar"><div class="logo-sm" data-i18n="logs">日志</div></div>
     <div class="log-toolbar">
-      <button id="btn-log-up" class="foc">导出到 NAS</button>
-      <button id="btn-log-down" class="foc">从 NAS 导入</button>
+      <button id="btn-log-up" class="foc" data-i18n="exportNas">导出到 NAS</button>
+      <button id="btn-log-down" class="foc" data-i18n="importNas">从 NAS 导入</button>
       <button id="btn-log-toggle" class="foc">日志记录：开</button>
       <button id="btn-log-hint" class="foc">日志提示：开</button>
-      <button id="btn-log-clear" class="foc">清空日志</button>
-      <button id="btn-log-back" class="foc">← 返回</button>
+      <button id="btn-log-clear" class="foc" data-i18n="clearLog">清空日志</button>
+      <button id="btn-log-back" class="foc" data-i18n="back">← 返回</button>
     </div>
     <div id="log-view" class="foc"></div>
     <div class="log-foot" id="log-foot"></div>
@@ -126,15 +127,15 @@
       <div id="osd-bar" class="foc"><div id="osd-fill"></div></div>
       <div class="osd-times"><span id="osd-cur"></span><span id="osd-state"></span><span id="osd-dur"></span></div>
       <div id="pbar">
-        <button id="btn-prev" class="pbtn foc">⏮ 上一集</button>
+        <button id="btn-prev" class="pbtn foc" data-i18n="prevEp">⏮ 上一集</button>
         <button id="btn-pp" class="pbtn foc">❚❚ 暂停</button>
-        <button id="btn-next" class="pbtn foc">下一集 ⏭</button>
-        <button id="btn-eps" class="pbtn foc">选集</button>
-        <button id="btn-sub" class="pbtn foc">字幕</button>
-        <button id="btn-aud" class="pbtn foc">音轨</button>
+        <button id="btn-next" class="pbtn foc" data-i18n="nextEp">下一集 ⏭</button>
+        <button id="btn-eps" class="pbtn foc" data-i18n="episodes">选集</button>
+        <button id="btn-sub" class="pbtn foc" data-i18n="subtitlesBtn">字幕</button>
+        <button id="btn-aud" class="pbtn foc" data-i18n="audioBtn">音轨</button>
         <button id="btn-ratio" class="pbtn foc">画面：适应</button>
       </div>
-      <div id="osd-hint">←/→ 快退/快进 · ↑ 大步快进 · ↓ 播控按钮 · 确认暂停/播放 · 返回退出</div>
+      <div id="osd-hint" data-i18n="playerHint">←/→ 快退/快进 · ↑ 大步快进 · ↓ 播控按钮 · 确认暂停/播放 · 返回退出</div>
     </div>
     <div id="ppanel">
       <div id="ppanel-title"></div>
